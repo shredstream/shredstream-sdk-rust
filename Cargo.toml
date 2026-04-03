@@ -1,0 +1,25 @@
+[package]
+name = "shredstream"
+version = "1.0.1"
+edition = "2021"
+description = "Solana ShredStream SDK/Decoder for Rust, enabling ultra-low latency Solana transaction streaming via UDP shreds from https://www.shredstream.com"
+license = "MIT"
+authors = ["ShredStream.com"]
+readme = "README.md"
+repository = "https://github.com/shredstream/shredstream-sdk-rust"
+homepage = "https://shredstream.com"
+keywords = ["solana", "shredstream", "mev", "hft", "defi"]
+categories = ["network-programming", "cryptography::cryptocurrencies"]
+exclude = ["assets/"]
+
+[dependencies]
+bincode = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2"
+solana-entry = { version = "=3.1.10", features = ["agave-unstable-api"] }
+solana-transaction = "3.0"
+socket2 = { version = "0.5", features = ["all"] }
+
+[[example]]
+name = "listen"
+path = "examples/listen.rs"
