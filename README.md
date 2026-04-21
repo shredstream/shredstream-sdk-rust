@@ -56,10 +56,6 @@ fn main() {
         }
     }
 
-    // OR raw shreds — lowest latency, arrives before block assembly
-    // for shred in listener.shreds() {
-    //     println!("slot {} index {} len {}", shred.slot, shred.index, shred.payload_len);
-    // }
 }
 ```
 
@@ -76,7 +72,6 @@ cargo run
 - `ShredListener::bind(port: u16) -> io::Result<Self>` -- Bind with defaults (25 MB recv buf, 10 slot max age)
 - `ShredListener::bind_with_options(port, opts) -> io::Result<Self>` -- Custom configuration
 - `listener.transactions() -> TransactionIter` -- Blocking iterator yielding decoded transactions as they arrive
-- `listener.shreds() -> ShredIter` -- Blocking iterator over `RawShred { slot, index, payload_len }`
 - `listener.active_slots() -> usize` -- Number of slots currently being accumulated
 
 ### `ListenerOptions`
@@ -96,7 +91,7 @@ ShredStream.com SDK detects PumpFun token creations **~499ms before they appear 
 
 <img src="https://raw.githubusercontent.com/shredstream/shredstream-sdk-rust/main/assets/shredstream.com_sdk_vs_pumpfun_live_feed.gif" alt="ShredStream.com SDK vs PumpFun live feed — ~499ms advantage" width="600">
 
-> [ShredStream.com](https://shredstream.com) provides a complete, optimized PumpFun token creation detection code exclusively to Pro plan subscribers and above. Battle-tested, high-performance, ready to plug into your sniping pipeline. To get access, open a ticket on [Discord](https://discord.gg/4w2DNbTaWD) or reach out on Telegram [@shredstream](https://t.me/shredstream).
+> [ShredStream.com](https://shredstream.com) provides a complete, optimized PumpFun token creation detection code available with our monthly subscription plan. Battle-tested, high-performance, ready to plug into your sniping pipeline. To get access, open a ticket on [Discord](https://discord.gg/4w2DNbTaWD) or reach out on Telegram [@shredstream](https://t.me/shredstream).
 
 ## ⚙️ Configuration
 
