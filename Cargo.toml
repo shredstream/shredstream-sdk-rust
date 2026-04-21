@@ -1,6 +1,6 @@
 [package]
 name = "shredstream"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 description = "Solana ShredStream SDK/Decoder for Rust, enabling ultra-low latency Solana transaction streaming via UDP shreds from https://www.shredstream.com"
 license = "MIT"
