@@ -34,8 +34,12 @@ Add `shredstream` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-shredstream = "2.0"
+shredstream = "3.0"
 ```
+
+> 3.0.0 delivers version 1 transactions and moves to `solana-transaction` 4.x.
+> Update your own `solana-transaction` dependency to 4.x and handle
+> `VersionedMessage::V1` where you match on message versions.
 
 ## ⚡ Quick Start
 

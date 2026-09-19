@@ -1,6 +1,3 @@
-use std::io::Cursor;
-
-use bincode::Options;
 use solana_entry::entry::Entry;
 use solana_transaction::versioned::VersionedTransaction;
 
@@ -9,17 +6,11 @@ use crate::error::DecodeError;
 const MAX_ENTRY_COUNT: u64 = 50_000;
 const INITIAL_BUFFER_CAPACITY: usize = 64 * 1024;
 
-fn bincode_opts(max_bytes: u64) -> impl Options + Copy {
-    bincode::options()
-        .with_fixint_encoding()
-        .with_limit(max_bytes)
-        .allow_trailing_bytes()
-}
-
-fn streaming_opts() -> impl Options + Copy {
-    bincode::options()
-        .with_fixint_encoding()
-        .allow_trailing_bytes()
+fn is_truncated(err: &wincode::ReadError) -> bool {
+    matches!(
+        err,
+        wincode::ReadError::Io(wincode::io::ReadError::ReadSizeLimit(_))
+    )
 }
 
 pub struct StreamingDecoder {
@@ -73,8 +64,6 @@ impl StreamingDecoder {
             None => return Ok(Vec::new()),
         };
 
-        let opts = streaming_opts();
-
         let mut txs = Vec::new();
 
         while self.entries_yielded < expected {
@@ -82,15 +71,16 @@ impl StreamingDecoder {
             if remaining.is_empty() {
                 break;
             }
-            let mut cur = Cursor::new(remaining);
-            match opts.deserialize_from::<_, Entry>(&mut cur) {
+            match wincode::deserialize::<Entry>(remaining) {
                 Ok(entry) => {
-                    self.cursor += cur.position() as usize;
+                    let consumed = wincode::serialized_size(&entry)
+                        .map_err(|e| DecodeError::Corruption(e.to_string()))?;
+                    self.cursor += consumed as usize;
                     self.entries_yielded += 1;
                     txs.extend(entry.transactions);
                 }
-                Err(ref e) if is_eof(e) => break,
-                Err(e) => return Err(DecodeError::Bincode(e)),
+                Err(ref e) if is_truncated(e) => break,
+                Err(e) => return Err(DecodeError::Corruption(e.to_string())),
             }
         }
 
@@ -104,18 +94,11 @@ impl Default for StreamingDecoder {
     }
 }
 
-fn is_eof(err: &bincode::Error) -> bool {
-    matches!(
-        err.as_ref(),
-        bincode::ErrorKind::Io(ref e) if e.kind() == std::io::ErrorKind::UnexpectedEof
-    )
-}
-
 pub fn decode_batch(bytes: &[u8]) -> Option<Vec<VersionedTransaction>> {
     if !validate_vec_prefix(bytes) {
         return None;
     }
-    let entries: Vec<Entry> = bincode_opts(bytes.len() as u64).deserialize(bytes).ok()?;
+    let entries: Vec<Entry> = wincode::deserialize(bytes).ok()?;
     Some(extract_txs(&entries))
 }
 
@@ -127,12 +110,11 @@ pub fn decode_concatenated(bytes: &[u8]) -> Vec<VersionedTransaction> {
         if !validate_vec_prefix(remaining) {
             break;
         }
-        let entries: Vec<Entry> =
-            match bincode_opts(remaining.len() as u64).deserialize(remaining) {
-                Ok(v) => v,
-                Err(_) => break,
-            };
-        let consumed = match bincode_opts(remaining.len() as u64).serialized_size(&entries) {
+        let entries: Vec<Entry> = match wincode::deserialize(remaining) {
+            Ok(v) => v,
+            Err(_) => break,
+        };
+        let consumed = match wincode::serialized_size(&entries) {
             Ok(n) => n as usize,
             Err(_) => break,
         };
